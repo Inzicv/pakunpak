@@ -39,6 +39,12 @@ with col1:
         help="Laissez '*' pour tout prendre, ou spécifiez (ex: I*, *OBJ, etc.)"
     ).strip().upper()
 
+    exclusions_input = st.text_input(
+        "Exclusions de sous-volumes (ex: AVADABC) - Laissez vide si aucune",
+        value="",
+        help="Entrez les noms des sous-volumes à exclure du PAK"
+    )
+
 with col2:
     st.markdown("### 3. Emplacement de stockage des PAK")
     
@@ -54,11 +60,6 @@ with col2:
         help="Par défaut basé sur ta règle de nommage, mais modifiable librement"
     ).strip().upper()
     
-    exclusions_input = st.text_input(
-        "Exclusions de sous-volumes (ex: AVADEBS, AVADCBG) - Laissez vide si aucune",
-        value="",
-        help="Entrez les noms des sous-volumes à exclure du PAK"
-    )
     
     st.markdown("### 4. Paramètres PAK")
     pak_ext = st.number_input("Extent size (-ext)", value=50000)
