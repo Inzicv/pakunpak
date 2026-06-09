@@ -17,28 +17,35 @@ with col1:
     )
     volume_full = f"$DEVT{vol_num}"
     
-    # Utilisation de 2 antislashs en code pour en afficher UN seul à l'écran
     st.markdown(f"**Volume source :** `\\ISIS.{volume_full}`")
     st.markdown(f"**Volume destination :** `\\LEIA.{volume_full}`")
 
+    st.markdown("### 2. Ciblage des fichiers")
     subv_input = st.text_area(
         "Sous-volumes à migrer (un par ligne)",
         value="AVAKTEST\nGAMRTEST\nGESVTEST\nSINUTEST\nSCPVABC\nLGIRABC",
         help="Entrez les sous-volumes à copier"
     )
+    
+    # ÉTAPE AJOUTÉE : Spécifier le pattern de fichier (* par défaut)
+    file_pattern = st.text_input(
+        "Pattern des fichiers à inclure",
+        value="*",
+        help="Laissez '*' pour tout prendre, ou spécifiez (ex: I*, *OBJ, etc.)"
+    ).strip().upper()
 
 with col2:
-    st.markdown("### 2. Règle de nommage automatique")
+    st.markdown("### 3. Règle de nommage automatique")
     pak_storage_subv = f"PAKMIG{vol_num}"
     st.info(f"📁 Sous-volume de stockage des PAK : `$DSMSCM.{pak_storage_subv}`")
     
     exclusions_input = st.text_input(
-        "Exclusions (ex: ZZSA*) - Laissez vide si aucune",
+        "Exclusions de sous-volumes (ex: AVADEBS, AVADCBG) - Laissez vide si aucune",
         value="",
-        help="Exemple: ZZSA* (s'appliquera sous la forme $VOL.$SUBV.ZZSA*)"
+        help="Entrez les noms des sous-volumes à exclure du PAK"
     )
     
-    st.markdown("### 3. Paramètres PAK")
+    st.markdown("### 4. Paramètres PAK")
     pak_ext = st.number_input("Extent size (-ext)", value=50000)
     pak_split = st.number_input("Split size (-split)", value=1000000000)
     purge_opt = st.checkbox("Purger le fichier PAK existant (-purge)", value=True)
@@ -50,6 +57,10 @@ subvolumes = [s.strip().upper() for s in subv_input.split("\n") if s.strip()]
 exclusions = []
 if exclusions_input.strip():
     exclusions = [e.strip().upper() for e in exclusions_input.split(",") if e.strip()]
+
+# Si le champ est vide ou mal nettoyé, on force le comportement par défaut '*'
+if not file_pattern:
+    file_pattern = "*"
 
 if subvolumes:
     pak_lines = []
@@ -68,8 +79,11 @@ if subvolumes:
         
         # 1. Commande PAK
         pak_cmd = f"pak -ext {pak_ext} -split {pak_split}{purge_str} {full_pak_path} &\n"
-        inc_path = f"({volume_full}.{subv}.*)"
         
+        # Prise en compte du pattern choisi (ex: $DEVT04.AVAKTEST.I*)
+        inc_path = f"({volume_full}.{subv}.{file_pattern})"
+        
+        # Exclusions de sous-volumes complets
         exc_parts = [f"not({volume_full}.{exc}.*)" for exc in exclusions]
         opts_path = ",listall,shareopen,audited"
         
@@ -81,7 +95,8 @@ if subvolumes:
         pak_lines.append(pak_cmd)
         
         # 2. Commande UNPAK
-        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.* TO \\LEIA.{volume_full}.{subv}.*)&\n,open,listall,audited"
+        # Le MAP NAMES doit aussi refléter le ciblage exact pour la restauration
+        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.{file_pattern} TO \\LEIA.{volume_full}.{subv}.*)&\n,open,listall,audited"
         unpak_lines.append(unpak_cmd)
 
     # Assemblage
