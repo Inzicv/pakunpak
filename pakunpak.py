@@ -19,8 +19,8 @@ with col1:
     )
     volume_full = f"$DEVT{vol_num}"
     
-    st.markdown(f"**Volume source :** `\\\ISIS.{volume_full}`")
-    st.markdown(f"**Volume destination :** `\\\LEIA.{volume_full}`")
+    st.markdown(f"**Volume source :** `\\ISIS.{volume_full}`")
+    st.markdown(f"**Volume destination :** `\\LEIA.{volume_full}`")
 
     subv_input = st.text_area(
         "Sous-volumes à migrer (un par ligne)",
