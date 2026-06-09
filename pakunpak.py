@@ -11,7 +11,7 @@ col1, col2 = st.columns(2)
 with col1:
     st.markdown("### 1. Sélection du Volume")
     vol_num = st.selectbox(
-        "Sélectionner le numéro du volume",
+        "Sélectionner le numéro du volume source/cible",
         ["02", "03", "04", "05"],
         index=3
     )
@@ -24,7 +24,6 @@ with col1:
         index=0
     )
     
-    # Nettoyage si "Aucune" est cochée
     node_dest = "" if machine_dest == "Aucune (Pas de nœud)" else machine_dest
 
     st.markdown("### 2. Ciblage des fichiers")
@@ -41,9 +40,19 @@ with col1:
     ).strip().upper()
 
 with col2:
-    st.markdown("### 3. Règle de nommage automatique")
-    pak_storage_subv = f"PAKMIG{vol_num}"
-    st.info(f"📁 Sous-volume de stockage des PAK : `$DSMSCM.{pak_storage_subv}`")
+    st.markdown("### 3. Emplacement de stockage des PAK")
+    
+    # MODIFICATION : Saisie libre du Volume et du Sous-volume pour les PAK
+    pak_storage_vol = st.text_input(
+        "Volume de stockage des PAK",
+        value="$DSMSCM"
+    ).strip().upper()
+    
+    pak_storage_subv = st.text_input(
+        "Sous-volume de stockage des PAK",
+        value=f"PAKMIG{vol_num}",
+        help="Par défaut basé sur ta règle de nommage, mais modifiable librement"
+    ).strip().upper()
     
     exclusions_input = st.text_input(
         "Exclusions de sous-volumes (ex: AVADEBS, AVADCBG) - Laissez vide si aucune",
@@ -67,6 +76,12 @@ if exclusions_input.strip():
 if not file_pattern:
     file_pattern = "*"
 
+# Sécurité si les champs de stockage sont vidés par erreur
+if not pak_storage_vol:
+    pak_storage_vol = "$DSMSCM"
+if not pak_storage_subv:
+    pak_storage_subv = f"PAKMIG{vol_num}"
+
 if subvolumes:
     pak_lines = []
     unpak_lines = []
@@ -79,7 +94,8 @@ if subvolumes:
         if len(pak_filename) > 8:
             pak_filename = pak_filename[:8]
             
-        full_pak_path = f"$DSMSCM.{pak_storage_subv}.{pak_filename}"
+        # Utilisation de l'emplacement dynamique choisi par l'utilisateur
+        full_pak_path = f"{pak_storage_vol}.{pak_storage_subv}.{pak_filename}"
         
         # 1. Commande PAK
         pak_cmd = f"pak -ext {pak_ext} -split {pak_split}{purge_str} {full_pak_path} &\n"
@@ -95,10 +111,8 @@ if subvolumes:
             
         pak_lines.append(pak_cmd)
         
-        # 2. Commande UNPAK avec gestion du nœud optionnel
-        # Si un nœud est sélectionné, on ajoute le point après, sinon rien
+        # 2. Commande UNPAK
         prefix_dest = f"{node_dest}." if node_dest else ""
-        
         unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.{file_pattern} TO {prefix_dest}{volume_full}.{subv}.*)&\n,open,listall,audited"
         unpak_lines.append(unpak_cmd)
 
