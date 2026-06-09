@@ -81,7 +81,7 @@ if subvolumes:
         
         # 2. Construction de la commande UNPAK (Exécutée sur \LEIA)
         # Le chemin reste identique (Volume et Sous-volume), pas besoin de MAP NAMES complexe
-        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.* TO {volume_full}.{subv}.*)&\n,open,listall,audited"
+        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.* TO \\LEIA.{volume_full}.{subv}.*)&\n,open,listall,audited"
         unpak_lines.append(unpak_cmd)
 
     # Assemblage des fichiers OBEY
