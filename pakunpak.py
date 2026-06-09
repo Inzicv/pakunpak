@@ -69,7 +69,7 @@ if subvolumes:
         # 1. Construction de la commande PAK (Exécutée sur \ISIS)
         pak_cmd = f"pak -ext {pak_ext} -split {pak_split}{purge_str} {full_pak_path} &\n"
         inc_path = f"({volume_full}.{subv}.*)"
-        exc_parts = [f"not({volume_full}.{subv}.{exc})" for exc in exclusions]
+        exc_parts = [f"not({volume_full}.{subv}.*)" for exc in exclusions]
         opts_path = ",listall,shareopen,audited"
         
         if exc_parts:
