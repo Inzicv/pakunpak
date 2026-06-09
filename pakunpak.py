@@ -81,7 +81,7 @@ if subvolumes:
         pak_lines.append(pak_cmd)
         
         # 2. Commande UNPAK
-        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.* TO {volume_full}.{subv}.*)&\n,open,listall,audited"
+        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.* TO \\LEIA.{volume_full}.{subv}.*)&\n,open,listall,audited"
         unpak_lines.append(unpak_cmd)
 
     # Assemblage
