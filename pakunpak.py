@@ -23,7 +23,7 @@ with col1:
 
     subv_input = st.text_area(
         "Sous-volumes à migrer (un par ligne)",
-        value="AVAKOBJ\nGAMKOBJ\nGESKOBJ\nSINKOBJ\nSCPKOBJ\nLGIKOBJ",
+        value="AVAKTEST\nGAMRTEST\nGESVTEST\nSINUTEST\nSCPVABC\nLGIRABC",
         help="Entrez les sous-volumes à copier"
     )
 
