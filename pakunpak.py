@@ -24,7 +24,7 @@ with col1:
 
     subv_input = st.text_area(
         "Sous-volumes à migrer (un par ligne)",
-        value="AVAKOBJ\nGAMKOBJ\nGESKOBJ\nSINKOBJ\nSCPKOBJ\nLGIKOBJ",
+        value="AVAL\nAVAADTS\nAVADCMD\nAVADEBG\nAVADEBL\nAVADEBS",
         help="Entrez les sous-volumes à copier"
     )
 
@@ -37,8 +37,8 @@ with col2:
     
     exclusions_input = st.text_input(
         "Exclusions (séparées par des virgules)",
-        value="ZZSA*",
-        help="Exemple: ZZSA*"
+        value="AVADCBG",
+        help="Exemple: AVADCB*"
     )
     
     st.markdown("### 3. Paramètres PAK")
