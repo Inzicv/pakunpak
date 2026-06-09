@@ -4,7 +4,7 @@ import io
 st.set_page_config(page_title="Générateur PAK/UNPAK Migration", layout="wide")
 
 st.title("🧙‍♂️ Générateur de Scripts PAK & UNPAK")
-st.subheader("Migration identique : \\ISIS ➔ \\LEIA")
+st.subheader("Générateur de commandes OBEY")
 
 col1, col2 = st.columns(2)
 
@@ -16,9 +16,16 @@ with col1:
         index=3
     )
     volume_full = f"$DEVT{vol_num}"
+
+    # Choix de la machine de destination
+    machine_dest = st.selectbox(
+        "Sélectionner la machine de destination (UNPAK)",
+        ["\\LEIA", "\\PADME", "\\ISIS", "\\ATLAS", "Aucune (Pas de nœud)"],
+        index=0
+    )
     
-    st.markdown(f"**Volume source :** `\\ISIS.{volume_full}`")
-    st.markdown(f"**Volume destination :** `\\LEIA.{volume_full}`")
+    # Nettoyage si "Aucune" est cochée
+    node_dest = "" if machine_dest == "Aucune (Pas de nœud)" else machine_dest
 
     st.markdown("### 2. Ciblage des fichiers")
     subv_input = st.text_area(
@@ -27,7 +34,6 @@ with col1:
         help="Entrez les sous-volumes à copier"
     )
     
-    # ÉTAPE AJOUTÉE : Spécifier le pattern de fichier (* par défaut)
     file_pattern = st.text_input(
         "Pattern des fichiers à inclure",
         value="*",
@@ -58,7 +64,6 @@ exclusions = []
 if exclusions_input.strip():
     exclusions = [e.strip().upper() for e in exclusions_input.split(",") if e.strip()]
 
-# Si le champ est vide ou mal nettoyé, on force le comportement par défaut '*'
 if not file_pattern:
     file_pattern = "*"
 
@@ -68,7 +73,6 @@ if subvolumes:
     purge_str = " -purge" if purge_opt else ""
     
     for subv in subvolumes:
-        # Règle de nommage du fichier PAK : PK + 5 premières lettres
         short_subv = subv[:5] if len(subv) >= 5 else subv
         pak_filename = f"PK{short_subv}"
         
@@ -79,11 +83,8 @@ if subvolumes:
         
         # 1. Commande PAK
         pak_cmd = f"pak -ext {pak_ext} -split {pak_split}{purge_str} {full_pak_path} &\n"
-        
-        # Prise en compte du pattern choisi (ex: $DEVT04.AVAKTEST.I*)
         inc_path = f"({volume_full}.{subv}.{file_pattern})"
         
-        # Exclusions de sous-volumes complets
         exc_parts = [f"not({volume_full}.{exc}.*)" for exc in exclusions]
         opts_path = ",listall,shareopen,audited"
         
@@ -94,9 +95,11 @@ if subvolumes:
             
         pak_lines.append(pak_cmd)
         
-        # 2. Commande UNPAK
-        # Le MAP NAMES doit aussi refléter le ciblage exact pour la restauration
-        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.{file_pattern} TO \\LEIA.{volume_full}.{subv}.*)&\n,open,listall,audited"
+        # 2. Commande UNPAK avec gestion du nœud optionnel
+        # Si un nœud est sélectionné, on ajoute le point après, sinon rien
+        prefix_dest = f"{node_dest}." if node_dest else ""
+        
+        unpak_cmd = f"UNPAK {full_pak_path},\n*.*.*,MAP NAMES(*.*.{file_pattern} TO {prefix_dest}{volume_full}.{subv}.*)&\n,open,listall,audited"
         unpak_lines.append(unpak_cmd)
 
     # Assemblage
@@ -106,7 +109,7 @@ if subvolumes:
     st.markdown("---")
     st.markdown("### 🚀 Résultat des Scripts OBEY")
 
-    tab1, tab2 = st.tabs(["Fichier OBEY - PAK (sur ISIS)", "Fichier OBEY - UNPAK (sur LEIA)"])
+    tab1, tab2 = st.tabs(["Fichier OBEY - PAK (sur ISIS)", "Fichier OBEY - UNPAK (sur Cible)"])
     
     with tab1:
         st.code(obey_pak_content, language="text")
