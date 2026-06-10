@@ -3,8 +3,7 @@ import io
 
 st.set_page_config(page_title="Générateur PAK/UNPAK Migration", layout="wide")
 
-st.title("🧙‍♂️ Générateur de Scripts PAK & UNPAK")
-st.subheader("Générateur de commandes OBEY")
+st.title("📦 Générateur d'obey PAK & UNPAK")
 
 col1, col2 = st.columns(2)
 
