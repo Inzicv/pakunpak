@@ -5,7 +5,7 @@ import io
 st.set_page_config(page_title="Outils de Migration Tandem", layout="wide")
 
 # ==========================================
-# PAGE 1 : GÉNÉRATEUR PAK & UNPAK (Ton code)
+# PAGE 1 : GÉNÉRATEUR PAK & UNPAK
 # ==========================================
 def page_generateur():
     st.title("📦 Générateur d'obey PAK & UNPAK")
@@ -14,13 +14,12 @@ def page_generateur():
 
     with col1:
         st.markdown("### 1. Sélection du Volume")
-        vol_num = st.selectbox(
-            "Sélectionner le numéro du volume source/cible",
-            ["02", "03", "04", "05"],
-            index=3,
-            key="gen_vol_num"
-        )
-        volume_full = f"$DEVT{vol_num}"
+        # MODIFICATION : Remplacement du selectbox par un text_input libre
+        volume_full = st.text_input(
+            "Volume source/cible (ex: $DEVT05, $PROD01, $DATA02)",
+            value="$DEVT05",
+            key="gen_volume_libre"
+        ).strip().upper()
 
         machine_dest = st.selectbox(
             "Sélectionner la machine de destination (UNPAK)",
@@ -62,10 +61,13 @@ def page_generateur():
             key="gen_pak_vol"
         ).strip().upper()
         
+        # Nettoyage du nom du volume pour la règle par défaut (ex: $DEVT05 -> DEVT05)
+        vol_clean = volume_full.replace('$', '') if volume_full else "MIG"
+        
         pak_storage_subv = st.text_input(
             "Sous-volume de stockage des PAK",
-            value=f"PAKMIG{vol_num}",
-            help="Par défaut basé sur ta règle de nommage, mais modifiable librement",
+            value=f"PAKMIG{vol_clean}",
+            help="Par défaut basé sur le nom de ton volume, mais modifiable librement",
             key="gen_pak_subv"
         ).strip().upper()
         
@@ -86,7 +88,7 @@ def page_generateur():
     if not pak_storage_vol:
         pak_storage_vol = "$DSMSCM"
     if not pak_storage_subv:
-        pak_storage_subv = f"PAKMIG{vol_num}"
+        pak_storage_subv = f"PAKMIG{vol_clean}"
 
     if subvolumes:
         pak_lines = []
@@ -132,7 +134,7 @@ def page_generateur():
             st.download_button(
                 label="📥 Télécharger OBEY_PAK.txt",
                 data=obey_pak_content,
-                file_name=f"OBEY_PAK_{volume_full.replace('$', '')}.txt",
+                file_name=f"OBEY_PAK_{vol_clean}.txt",
                 mime="text/plain"
             )
             
@@ -141,7 +143,7 @@ def page_generateur():
             st.download_button(
                 label="📥 Télécharger OBEY_UNPAK.txt",
                 data=obey_unpak_content,
-                file_name=f"OBEY_UNPAK_{volume_full.replace('$', '')}.txt",
+                file_name=f"OBEY_UNPAK_{vol_clean}.txt",
                 mime="text/plain"
             )
     else:
@@ -149,7 +151,7 @@ def page_generateur():
 
 
 # ==========================================
-# PAGE 2 : VÉRIFICATEUR POST-COPIE (New!)
+# PAGE 2 : VÉRIFICATEUR POST-COPIE
 # ==========================================
 def page_verificateur():
     st.title("🔍 Vérificateur Post-Copie (FILEINFO)")
@@ -158,13 +160,12 @@ def page_verificateur():
     
     with col1:
         st.markdown("### 1. Configuration du Check")
-        vol_num = st.selectbox(
-            "Volume à vérifier (Cible)",
-            ["02", "03", "04", "05"],
-            index=3,
-            key="check_vol_num"
-        )
-        volume_full = f"$DEVT{vol_num}"
+        # MODIFICATION : Remplacement du selectbox par un text_input libre ici aussi
+        volume_full = st.text_input(
+            "Volume à vérifier (Cible) (ex: $DEVT05, $PROD01)",
+            value="$DEVT05",
+            key="check_volume_libre"
+        ).strip().upper()
         
         subv_input = st.text_area(
             "Sous-volumes attendus (un par ligne)",
@@ -178,20 +179,20 @@ def page_verificateur():
             key="check_file_pattern"
         ).strip().upper()
         
-        # Génération du script de vérification
         subvolumes = [s.strip().upper() for s in subv_input.split("\n") if s.strip()]
         
         if subvolumes:
-            # On génère des commandes short pour avoir un retour condensé et facile à parser dans la log
             fi_lines = [f"fileinfo {volume_full}.{subv}.{file_pattern}, short" for subv in subvolumes]
             obey_check_content = "\n".join(fi_lines)
             
             st.markdown("### 📋 Script OBEY de Vérification à exécuter")
             st.code(obey_check_content, language="text")
+            
+            vol_clean = volume_full.replace('$', '') if volume_full else "MIG"
             st.download_button(
                 label="📥 Télécharger OBEY_CHECK.txt",
                 data=obey_check_content,
-                file_name=f"OBEY_CHECK_{volume_full.replace('$', '')}.txt",
+                file_name=f"OBEY_CHECK_{vol_clean}.txt",
                 mime="text/plain"
             )
             
@@ -219,17 +220,12 @@ def page_verificateur():
                 log_upper = log_data.upper()
                 manquants = []
                 presents = []
-                erreurs = []
                 
                 for subv in subvolumes:
                     target_path = f"{volume_full}.{subv}"
                     
-                    # On check si le sous volume apparaît dans la log
                     if target_path in log_upper:
-                        # Si le pattern est présent mais suivi d'une erreur TACL évidente
-                        # On gère le cas standard de FILEINFO : No files matching... ou * ERROR *
                         if "NO FILES MATCHING" in log_upper or "ERROR" in log_upper:
-                            # Extraction de la section spécifique au sous-volume pour affiner le check
                             subv_section = log_upper.split(target_path)[1].split("FILEINFO")[0]
                             if "NO FILES" in subv_section or "ERR" in subv_section or "NOT FOUND" in subv_section:
                                 manquants.append(f"{target_path}.{file_pattern} (Sous-volume trouvé mais vide/erreur)")
@@ -240,7 +236,6 @@ def page_verificateur():
                     else:
                         manquants.append(f"❌ {target_path}.{file_pattern} (Absent de la log)")
                 
-                # Affichage des résultats
                 if manquants:
                     st.error(f"🚨 Alerte : {len(manquants)} élément(s) manquant(s) ou en erreur !")
                     for m in manquants:
@@ -254,7 +249,7 @@ def page_verificateur():
 
 
 # ==========================================
-# CONFIGURATION DE LA NAVIGATION NATIVE (Streamlit 1.31+)
+# CONFIGURATION DE LA NAVIGATION NATIVE
 # ==========================================
 pg = st.navigation([
     st.Page(page_generateur, title="Générateur PAK/UNPAK", icon="📦"),
