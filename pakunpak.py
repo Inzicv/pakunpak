@@ -127,7 +127,7 @@ def page_generateur():
         st.markdown("---")
         st.markdown("### 🚀 Résultat des Scripts OBEY")
 
-        tab1, tab2 = st.tabs(["Fichier OBEY - PAK (sur ISIS)", "Fichier OBEY - UNPAK (sur Cible)"])
+        tab1, tab2 = st.tabs(["Fichier OBEY - PAK", "Fichier OBEY - UNPAK"])
         
         with tab1:
             st.code(obey_pak_content, language="text")
@@ -154,7 +154,7 @@ def page_generateur():
 # PAGE 2 : VÉRIFICATEUR POST-COPIE
 # ==========================================
 def page_verificateur():
-    st.title("🔍 Vérificateur Post-Copie (FILEINFO)")
+    st.title("🔍 Vérificateur Post-Copie")
     
     col1, col2 = st.columns(2)
     
