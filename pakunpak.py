@@ -217,4 +217,47 @@ def page_verificateur():
                 st.markdown("### 📊 Rapport de vérification")
                 
                 log_upper = log_data.upper()
-                manqu
+                manquants = []
+                presents = []
+                erreurs = []
+                
+                for subv in subvolumes:
+                    target_path = f"{volume_full}.{subv}"
+                    
+                    # On check si le sous volume apparaît dans la log
+                    if target_path in log_upper:
+                        # Si le pattern est présent mais suivi d'une erreur TACL évidente
+                        # On gère le cas standard de FILEINFO : No files matching... ou * ERROR *
+                        if "NO FILES MATCHING" in log_upper or "ERROR" in log_upper:
+                            # Extraction de la section spécifique au sous-volume pour affiner le check
+                            subv_section = log_upper.split(target_path)[1].split("FILEINFO")[0]
+                            if "NO FILES" in subv_section or "ERR" in subv_section or "NOT FOUND" in subv_section:
+                                manquants.append(f"{target_path}.{file_pattern} (Sous-volume trouvé mais vide/erreur)")
+                            else:
+                                presents.append(f"✅ {target_path}.{file_pattern}")
+                        else:
+                            presents.append(f"✅ {target_path}.{file_pattern}")
+                    else:
+                        manquants.append(f"❌ {target_path}.{file_pattern} (Absent de la log)")
+                
+                # Affichage des résultats
+                if manquants:
+                    st.error(f"🚨 Alerte : {len(manquants)} élément(s) manquant(s) ou en erreur !")
+                    for m in manquants:
+                        st.write(m)
+                else:
+                    st.success("🎉 Tout est au complet ! Aucun sous-volume ou fichier manquant détecté.")
+                    
+                with st.expander("Voir les éléments validés"):
+                    for p in presents:
+                        st.write(p)
+
+
+# ==========================================
+# CONFIGURATION DE LA NAVIGATION NATIVE (Streamlit 1.31+)
+# ==========================================
+pg = st.navigation([
+    st.Page(page_generateur, title="Générateur PAK/UNPAK", icon="📦"),
+    st.Page(page_verificateur, title="Vérificateur Post-Copie", icon="🔍")
+])
+pg.run()
