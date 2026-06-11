@@ -245,7 +245,7 @@ def page_verificateur():
                         presents.append(f"✅ {target_path}.{file_pattern}")
                     else:
                         if subv_en_erreur:
-                            manquants.append(f"❌ {target_path}.{file_pattern} (Spécifié dans la log mais VIDE / No files match)")
+                            manquants.append(f"❌ {target_path}.{file_pattern} (No files match)")
                         else:
                             manquants.append(f"❌ {target_path}.{file_pattern} (Absent de la log - Non exécuté)")
                 
