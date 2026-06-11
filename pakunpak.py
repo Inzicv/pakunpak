@@ -181,7 +181,7 @@ def page_verificateur():
         subvolumes = [s.strip().upper() for s in subv_input.split("\n") if s.strip()]
         
         if subvolumes:
-            fi_lines = [f"fileinfo {volume_full}.{subv}.{file_pattern}, short" for subv in subvolumes]
+            fi_lines = [f"fileinfo {volume_full}.{subv}.{file_pattern}" for subv in subvolumes]
             obey_check_content = "\n".join(fi_lines)
             
             st.markdown("### 📋 Script OBEY de Vérification à exécuter")
