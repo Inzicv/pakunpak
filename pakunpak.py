@@ -154,13 +154,12 @@ def page_generateur():
 # PAGE 2 : VÉRIFICATEUR POST-COPIE
 # ==========================================
 def page_verificateur():
-    st.title("🔍 Vérificateur Post-Copie")
+    st.title("🔍 Vérificateur Post-Copie (FILEINFO)")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("### 1. Configuration du Check")
-        # MODIFICATION : Remplacement du selectbox par un text_input libre ici aussi
         volume_full = st.text_input(
             "Volume à vérifier (Cible) (ex: $DEVT05, $PROD01)",
             value="$DEVT05",
@@ -169,7 +168,7 @@ def page_verificateur():
         
         subv_input = st.text_area(
             "Sous-volumes attendus (un par ligne)",
-            value="AVAKTEST\nGAMRTEST\nGESVTEST\nSINUTEST\nSCPVABC\nLGIRABC",
+            value="GPAOTACL\nSAFE\nAVADOBJ\nAVAKOBJ\nGAMKOBJ\nGESKOBJ",
             key="check_subv_input"
         )
         
@@ -182,7 +181,7 @@ def page_verificateur():
         subvolumes = [s.strip().upper() for s in subv_input.split("\n") if s.strip()]
         
         if subvolumes:
-            fi_lines = [f"fileinfo {volume_full}.{subv}.{file_pattern}" for subv in subvolumes]
+            fi_lines = [f"fileinfo {volume_full}.{subv}.{file_pattern}, short" for subv in subvolumes]
             obey_check_content = "\n".join(fi_lines)
             
             st.markdown("### 📋 Script OBEY de Vérification à exécuter")
@@ -221,31 +220,47 @@ def page_verificateur():
                 manquants = []
                 presents = []
                 
+                # --- NOUVEAU PARSER ROBUSTE ---
+                # On découpe la log par bloc de commande "FILEINFO "
+                blocs = log_upper.split("FILEINFO ")
+                
                 for subv in subvolumes:
                     target_path = f"{volume_full}.{subv}"
+                    subv_trouve = False
+                    subv_en_erreur = False
                     
-                    if target_path in log_upper:
-                        if "NO FILES MATCHING" in log_upper or "ERROR" in log_upper:
-                            subv_section = log_upper.split(target_path)[1].split("FILEINFO")[0]
-                            if "NO FILES" in subv_section or "ERR" in subv_section or "NOT FOUND" in subv_section:
-                                manquants.append(f"{target_path}.{file_pattern} (Sous-volume trouvé mais vide/erreur)")
-                            else:
-                                presents.append(f"✅ {target_path}.{file_pattern}")
-                        else:
-                            presents.append(f"✅ {target_path}.{file_pattern}")
+                    # On cherche le bloc qui correspond à notre sous-volume
+                    for bloc in blocs:
+                        # Le bloc doit commencer par notre chemin (ex: $DEVT05.AVAKOBJ.*)
+                        if bloc.startswith(target_path):
+                            subv_trouve = True
+                            
+                            # On vérifie si ce bloc précis contient une info d'absence de fichier
+                            if "NO FILES MATCH" in bloc or "ERROR" in bloc or "NOT FOUND" in bloc:
+                                subv_en_erreur = True
+                            break
+                    
+                    # Diagnostic final pour le sous-volume
+                    if subv_trouve and not subv_en_erreur:
+                        presents.append(f"✅ {target_path}.{file_pattern}")
                     else:
-                        manquants.append(f"❌ {target_path}.{file_pattern} (Absent de la log)")
+                        if subv_en_erreur:
+                            manquants.append(f"❌ {target_path}.{file_pattern} (Spécifié dans la log mais VIDE / No files match)")
+                        else:
+                            manquants.append(f"❌ {target_path}.{file_pattern} (Absent de la log - Non exécuté)")
                 
+                # Affichage des résultats à l'écran
                 if manquants:
-                    st.error(f"🚨 Alerte : {len(manquants)} élément(s) manquant(s) ou en erreur !")
+                    st.error(f"🚨 Alerte : {len(manquants)} élément(s) manquant(s) ou vide(s) !")
                     for m in manquants:
                         st.write(m)
                 else:
                     st.success("🎉 Tout est au complet ! Aucun sous-volume ou fichier manquant détecté.")
                     
-                with st.expander("Voir les éléments validés"):
-                    for p in presents:
-                        st.write(p)
+                if presents:
+                    with st.expander("Voir les éléments validés"):
+                        for p in presents:
+                            st.write(p)
 
 
 # ==========================================
